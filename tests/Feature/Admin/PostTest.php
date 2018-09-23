@@ -2,14 +2,11 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Comment;
+use App\Models\Comment;
 
-use App\Post;
-use App\User;
-use Carbon\Carbon;
+use App\Models\Post;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PostTest extends TestCase
@@ -25,11 +22,11 @@ class PostTest extends TestCase
         $this->actingAsAdmin()
             ->get("/admin/posts")
             ->assertStatus(200)
-            ->assertSee('4 articles')
+            ->assertSee('4 posts')
             ->assertSee('Anakin')
-            ->assertSee('Auteur')
-            ->assertSee('Posté le')
-            ->assertSee('Titre');
+            ->assertSee('Author')
+            ->assertSee('Posted at')
+            ->assertSee('Title');
     }
 
     public function testCreate()
@@ -37,12 +34,12 @@ class PostTest extends TestCase
         $this->actingAsAdmin()
             ->get('/admin/posts/create')
             ->assertStatus(200)
-            ->assertSee('Ajouter un article')
-            ->assertSee('Titre')
-            ->assertSee('Auteur')
-            ->assertSee('Post&eacute; le')
-            ->assertSee('Contenu')
-            ->assertSee('Sauvegarder');
+            ->assertSee('Create post')
+            ->assertSee('Title')
+            ->assertSee('Author')
+            ->assertSee('Posted at')
+            ->assertSee('Content')
+            ->assertSee('Save');
     }
 
     public function testStore()
@@ -53,16 +50,11 @@ class PostTest extends TestCase
             ->post('/admin/posts', $params)
             ->assertStatus(302);
 
-        $params['posted_at'] = Carbon::now()->second(0)->toDateTimeString();
+        $params['posted_at'] = now()->second(0)->toDateTimeString();
 
         $post = Post::first();
 
-        $this->assertDatabaseHas('posts', array_except($params, ['thumbnail']));
-        $this->assertTrue($post->hasThumbnail());
-        $this->assertTrue(Storage::disk('local')->exists($post->thumbnail()->filename));
-        $this->assertEquals($post->thumbnail()->original_filename, 'file.png');
-
-        Storage::delete($post->thumbnail()->filename);
+        $this->assertDatabaseHas('posts', $params);
     }
 
     public function testStoreFail()
@@ -84,12 +76,12 @@ class PostTest extends TestCase
             ->get("/admin/posts/{$post->slug}/edit")
             ->assertStatus(200)
             ->assertSee('Anakin')
-            ->assertSee("Voir l'article")
+            ->assertSee('Show post')
             ->assertSee(e($post->title))
             ->assertSee(e($post->content))
             ->assertSee(humanize_date($post->posted_at, 'Y-m-d\TH:i'))
-            ->assertSee('Mettre à jour')
-            ->assertSee('Post&eacute; le');
+            ->assertSee('Update')
+            ->assertSee('Posted at');
     }
 
     public function testUpdate()
@@ -103,27 +95,8 @@ class PostTest extends TestCase
 
         $response->assertRedirect("/admin/posts/{$post->slug}/edit");
 
-        $this->assertDatabaseHas('posts', array_except($params, 'thumbnail'));
-        $this->assertTrue($post->hasThumbnail());
+        $this->assertDatabaseHas('posts', $params);
         $this->assertEquals($params['content'], $post->content);
-
-        Storage::delete($post->thumbnail()->filename);
-    }
-
-    public function testUnsetThumbnail()
-    {
-        $post = factory(Post::class)->create();
-        $post->storeAndSetThumbnail(UploadedFile::fake()->image('file.png'));
-        $thumbnail = $post->thumbnail();
-
-        $this->actingAsAdmin()
-            ->delete("/admin/posts/{$post->slug}/thumbnail", [])
-            ->assertRedirect("/admin/posts/{$post->slug}/edit");
-
-        $post->refresh();
-        $this->assertFalse($post->hasThumbnail());
-
-        Storage::delete($thumbnail->filename);
     }
 
     public function testDelete()
@@ -155,9 +128,8 @@ class PostTest extends TestCase
         return array_merge([
             'title' => 'hello world',
             'content' => "I'm a content",
-            'posted_at' => Carbon::now()->format('Y-m-d\TH:i'),
+            'posted_at' => now()->format('Y-m-d\TH:i'),
             'author_id' => $this->admin()->id,
-            'thumbnail' => UploadedFile::fake()->image('file.png'),
         ], $overrides);
     }
 }

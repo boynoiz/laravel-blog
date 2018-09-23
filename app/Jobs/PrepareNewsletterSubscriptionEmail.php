@@ -2,8 +2,7 @@
 
 namespace App\Jobs;
 
-use App\NewsletterSubscription;
-use Carbon\Carbon;
+use App\Models\NewsletterSubscription;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -16,10 +15,8 @@ class PrepareNewsletterSubscriptionEmail implements ShouldQueue
 
     /**
      * Execute the job.
-     *
-     * @return void
      */
-    public function handle()
+    public function handle(): void
     {
         $newsletterSubscriptions = NewsletterSubscription::all();
 
@@ -27,6 +24,6 @@ class PrepareNewsletterSubscriptionEmail implements ShouldQueue
             SendNewsletterSubscriptionEmail::dispatch($newsletterSubscription->email);
         });
 
-        PrepareNewsletterSubscriptionEmail::dispatch()->delay(Carbon::now()->addSecond());
+        PrepareNewsletterSubscriptionEmail::dispatch()->delay(carbon('next month'));
     }
 }

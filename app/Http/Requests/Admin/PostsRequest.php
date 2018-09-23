@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\User;
 use App\Rules\CanBeAuthor;
-use App\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -21,10 +21,8 @@ class PostsRequest extends FormRequest
 
     /**
      * Prepare the data for validation.
-     *
-     * @return void
      */
-    protected function prepareForValidation()
+    protected function prepareForValidation(): void
     {
         $this->merge([
             'slug' => str_slug($this->input('title'))
@@ -37,18 +35,16 @@ class PostsRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             'title' => 'required',
             'content' => 'required',
             'posted_at' => 'required|date',
+            'thumbnail_id' => 'nullable|exists:media,id',
             'author_id' => ['required', 'exists:users,id', new CanBeAuthor],
-            'slug' => 'unique:posts,slug,' . optional($this->post)->id,
-            'thumbnail' => 'image',
+            'slug' => 'unique:posts,slug,' . (optional($this->post)->id ?: 'NULL'),
         ];
     }
 }

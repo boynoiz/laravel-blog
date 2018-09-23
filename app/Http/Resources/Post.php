@@ -8,11 +8,8 @@ class Post extends Resource
 {
     /**
      * Transform the resource into an array.
-     *
-     * @param  \Illuminate\Http\Request
-     * @return array
      */
-    public function toArray($request)
+    public function toArray($request): array
     {
         return [
             'id' => $this->id,
@@ -21,9 +18,9 @@ class Post extends Resource
             'content' => $this->content,
             'posted_at' => $this->posted_at->toIso8601String(),
             'author_id' => $this->author_id,
-            'has_thumbnail' => $this->hasThumbnail(),
-            'thumbnail_url' => optional($this->thumbnail())->url,
-            'comments_count' => $this->comments_count ?? $this->comments()->count()
+            'comments_count' => $this->comments_count ?? $this->comments()->count(),
+            'thumbnail_url' => $this->when($this->hasThumbnail(), url(optional($this->thumbnail)->getUrl())),
+            'thumb_thumbnail_url' => $this->when($this->hasThumbnail(), url(optional($this->thumbnail)->getUrl('thumb')))
         ];
     }
 }

@@ -2,13 +2,10 @@
 
 namespace Tests\Unit;
 
-use App\Media;
-use App\Post;
+use App\Models\Post;
 use Carbon\Carbon;
 use Faker\Factory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PostTest extends TestCase
@@ -38,7 +35,7 @@ class PostTest extends TestCase
         factory(Post::class, 3)
                 ->create()
                 ->each(function ($post) use ($faker) {
-                    $post->posted_at = $faker->dateTimeBetween(Carbon::now()->subMonths(3), Carbon::now()->subMonths(2));
+                    $post->posted_at = $faker->dateTimeBetween(carbon('3 months ago'), carbon('2 months ago'));
                     $post->save();
                 });
 
@@ -46,13 +43,13 @@ class PostTest extends TestCase
         factory(Post::class, 3)
                 ->create()
                 ->each(function ($post) use ($faker) {
-                    $post->posted_at = $faker->dateTimeBetween(Carbon::now()->subWeeks(3), Carbon::now()->subWeeks(1));
+                    $post->posted_at = $faker->dateTimeBetween(carbon('3 weeks ago'), carbon('1 weeks ago'));
                     $post->save();
                 });
 
         $isDuringLastMonth = true;
         foreach (Post::lastMonth()->get() as $post) {
-            $isDuringLastMonth = $post->posted_at->between(Carbon::now()->subMonth(), Carbon::now());
+            $isDuringLastMonth = $post->posted_at->between(carbon('1 month ago'), now());
 
             if (! $isDuringLastMonth) {
                 break;
@@ -70,7 +67,7 @@ class PostTest extends TestCase
         factory(Post::class, 3)
                 ->create()
                 ->each(function ($post) use ($faker) {
-                    $post->posted_at = $faker->dateTimeBetween(Carbon::now()->subMonths(3), Carbon::now()->subMonths(2));
+                    $post->posted_at = $faker->dateTimeBetween(carbon('3 months ago'), carbon('2 months ago'));
                     $post->save();
                 });
 
@@ -78,13 +75,13 @@ class PostTest extends TestCase
         factory(Post::class, 3)
                 ->create()
                 ->each(function ($post) use ($faker) {
-                    $post->posted_at = $faker->dateTimeBetween(Carbon::now()->subWeek(), Carbon::now());
+                    $post->posted_at = $faker->dateTimeBetween(carbon('1 week ago'), now());
                     $post->save();
                 });
 
         $isDuringLastWeek = true;
         foreach (Post::lastWeek()->get() as $post) {
-            $isDuringLastWeek = $post->posted_at->between(Carbon::now()->subWeek(), Carbon::now());
+            $isDuringLastWeek = $post->posted_at->between(carbon('1 week ago'), now());
 
             if (! $isDuringLastWeek) {
                 break;
@@ -96,12 +93,12 @@ class PostTest extends TestCase
 
     public function testPostedAtScopeApplied()
     {
-        factory(Post::class)->create()->update(['posted_at' => Carbon::yesterday()]);
-        factory(Post::class)->create()->update(['posted_at' => Carbon::tomorrow()]);
+        factory(Post::class)->create()->update(['posted_at' => carbon('yesterday')]);
+        factory(Post::class)->create()->update(['posted_at' => carbon('tomorrow')]);
 
         $isBeforeNow = true;
         foreach (Post::all() as $post) {
-            $isBeforeNow = $post->posted_at->lt(Carbon::now());
+            $isBeforeNow = $post->posted_at->lt(now());
 
             if (! $isBeforeNow) {
                 break;
@@ -116,12 +113,12 @@ class PostTest extends TestCase
     {
         $this->actingAsAdmin();
 
-        factory(Post::class)->create()->update(['posted_at' => Carbon::yesterday()]);
-        factory(Post::class)->create()->update(['posted_at' => Carbon::tomorrow()]);
+        factory(Post::class)->create()->update(['posted_at' => carbon('yesterday')]);
+        factory(Post::class)->create()->update(['posted_at' => carbon('tomorrow')]);
 
         $isBeforeNow = true;
         foreach (Post::all() as $post) {
-            $isBeforeNow = $post->posted_at->lt(Carbon::now());
+            $isBeforeNow = $post->posted_at->lt(now());
 
             if (! $isBeforeNow) {
                 break;
@@ -130,41 +127,6 @@ class PostTest extends TestCase
 
         $this->assertFalse($isBeforeNow);
         $this->assertEquals(2, Post::count());
-    }
-
-    public function testHasThumbnail()
-    {
-        $post = factory(Post::class)->create();
-        $media = factory(Media::class)->states('thumbnail')->create(['mediable_id' => $post->id]);
-
-        $post->update(['thumbnail_id' => $media->id]);
-
-        $this->assertTrue($post->hasThumbnail());
-    }
-
-    public function testPostsThumbnail()
-    {
-        $post = factory(Post::class)->create();
-        $media = factory(Media::class)->states('thumbnail')->create(['mediable_id' => $post->id]);
-
-        $post->update(['thumbnail_id' => $media->id]);
-
-        $this->assertTrue(is_a($post->thumbnail(), 'App\Media'));
-        $this->assertEquals($post->thumbnail()->id, $media->id);
-    }
-
-    public function testStoreAndSetThumbnail()
-    {
-        $post = factory(Post::class)->create();
-        $thumbnail = UploadedFile::fake()->image('file.png');
-
-        $post->storeAndSetThumbnail($thumbnail);
-
-        $this->assertTrue($post->hasThumbnail());
-        $this->assertTrue(Storage::disk('local')->exists($post->thumbnail()->filename));
-        $this->assertEquals($post->thumbnail()->original_filename, 'file.png');
-
-        Storage::delete($post->thumbnail()->filename);
     }
 
     public function testSearch()

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Api\V1;
 
-use App\Post;
+use App\Models\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,7 +16,7 @@ class PostLikeTest extends TestCase
 
         $this->actingAsUser('api')
             ->json('POST', "/api/v1/posts/{$post->id}/likes")
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->assertCount(1, $post->likes);
     }
